@@ -1,0 +1,163 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { BackButton } from '../navigation/BackButton';
+import { formatCurrency } from '../../utils/currency';
+import axiosTest from '../../plugins/axios';
+
+interface OrderSummaryProps {
+  user: string;
+  subtotal: number;
+  gameName: string;
+  productName: string;
+  price: number;
+  accountId: string;
+  voucherCode?: string;
+  discount?: number;
+}
+
+export const OrderSummary = () => {
+  const { orderId } = useParams<{ orderId: string }>();
+  const navigate = useNavigate();
+  const [orderData, setOrderData] = useState<OrderSummaryProps | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!orderId) {
+      console.error("Order ID is missing");
+      navigate("/checkout"); // Redirect jika tidak ada orderId
+      return;
+    }
+  
+    const fetchOrderData = async () => {
+      try {
+        const response = await axiosTest.get(`/orders/${orderId}`);
+        // console.log("Order data response:", response.data);
+        const data = response.data;
+        const orderSummary: OrderSummaryProps = {
+          user: data.user.name, // Dari properti `user`
+          subtotal: parseFloat(data.total_price), // Total harga dari API
+          gameName: data.product.game.name, // Jika data ini tidak tersedia di API
+          productName: data.product.name, // Dari properti `product`
+          price: parseFloat(data.product.price), // Harga asli dari `product`
+          accountId: data.game_account_id, // Account ID
+          voucherCode: data.voucher.code, // Tidak tersedia di respons
+          discount: data.voucher.discount, // Tidak tersedia di respons
+        };
+    
+        setOrderData(orderSummary);
+      } catch (error) {
+        console.error("Error fetching order data:", error);
+        navigate("/checkout");
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    fetchOrderData();
+  }, [orderId, navigate]);  
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!orderData) {
+    return <div>Error: Order data could not be loaded.</div>;
+  }
+
+  const { user, subtotal, gameName, productName, price, accountId, voucherCode, discount } = orderData;
+
+
+  const handleConfirmPayment = async () => {
+    try {
+      const response = await axiosTest.post('/payments/midtrans', { order_id: orderId });
+  
+      // Data Snap Token dari backend
+      const snapToken = response.data.snap_token;
+  
+      // Tambahkan library Snap
+      const midtransScript = document.createElement('script');
+      midtransScript.src = 'https://app.sandbox.midtrans.com/snap/snap.js';
+      midtransScript.setAttribute('data-client-key', 'YOUR_CLIENT_KEY'); // Ganti dengan client key Midtrans
+      document.body.appendChild(midtransScript);
+  
+      midtransScript.onload = () => {
+        window.snap.pay(snapToken, {
+          onSuccess: (result: any) => {
+            console.log('Payment Success:', result);
+
+            alert('Payment successful! Click OK to confirm.');
+            // Panggil backend untuk menangani notifikasi
+            axiosTest.post(`/payments/handle-notification`, { result })
+            .then((res) => {
+                console.log(res.data.message);
+                navigate('/success'); // Arahkan ke halaman sukses
+            })
+            .catch((err) => {
+                console.error('Failed to handle notification:', err);
+                navigate('/failed'); // Arahkan ke halaman gagal
+            });
+          },
+          onPending: (result: any) => {
+            console.log('Payment Pending:', result);
+            navigate('/pending'); // Arahkan ke halaman pending
+          },
+          onError: (result: any) => {
+            console.error('Payment Failed:', result);
+            navigate('/failed'); // Arahkan ke halaman gagal
+          },
+        });
+      };
+    } catch (error) {
+      console.error('Failed to initialize payment:', error);
+    }
+  };
+  
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <BackButton label="Back to Checkout" />
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden p-6">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Order Summary</h1>
+
+          <div className="mb-6 space-y-4">
+            <SummaryItem label="Buyer" value={user} />
+            <SummaryItem label="Game Name" value={gameName} />
+            <SummaryItem label="Product" value={productName} />
+            <SummaryItem label="Price" value={formatCurrency(price)} />
+            <SummaryItem label="Account ID" value={accountId} />
+            {voucherCode && <SummaryItem label="Voucher Code" value={voucherCode} />}
+            {discount && <SummaryItem label="Amount Discount" value={formatCurrency(discount)} />}
+          </div>
+
+          <div className="space-y-4">
+            <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+              <SummaryItem label="Total" value={formatCurrency(subtotal)} isTotal />
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <button
+              onClick={handleConfirmPayment}
+              className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-indigo-500 transition-colors"
+            >
+              Payment
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const SummaryItem = ({ label, value, isTotal }: { label: string; value: string; isTotal?: boolean }) => (
+  <div className={`flex justify-between ${isTotal ? 'font-medium text-lg' : ''}`}>
+    <span className={`text-gray-600 dark:text-gray-300 ${isTotal ? 'font-semibold text-gray-900 dark:text-white' : ''}`}>
+      {label}
+    </span>
+    <span className={`text-gray-900 dark:text-white ${isTotal ? 'font-semibold text-gray-900 dark:text-white' : ''}`}>
+      {value}
+    </span>
+  </div>
+);
