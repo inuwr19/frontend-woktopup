@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { LogIn } from "lucide-react";
 import { AuthLayout } from "../../components/auth/AuthLayout";
-import { useAuth  } from "../../components/auth/AuthContext";
+import { useAuth } from "../../components/auth/AuthContext";
 import axios from "axios";
 // import api from '../../components/auth/axiosConfig';
 import axiosTest from "../../plugins/axios";
@@ -21,23 +21,24 @@ export const Login: React.FC = () => {
     try {
       // Login pengguna
       await axiosTest.post(
-        "/auth/spa/login",
+        "/auth/login",
         { email, password },
         { withCredentials: true }
       );
 
-      // Ambil data pengguna dan simpan di Context serta localStorage
-    const { data } = await axiosTest.get("/user", {
-      withCredentials: true,
-    });
-    setUser(data); // Perbarui informasi pengguna di AuthContext
-    localStorage.setItem("user_id", data.id); // Simpan user_id ke localStorage
+      // Ambil data pengguna dan simpan
+      const { data } = await axiosTest.get("/user", {
+        withCredentials: true,
+      });
+      setUser(data);
+      localStorage.setItem("user_id", data.id);
 
-      // Redirect ke halaman utama
       navigate("/");
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.message || "Login failed");
+        const message =
+          err.response?.data?.message || "Login failed. Please try again.";
+        setError(message);
       } else {
         setError("An unexpected error occurred.");
       }

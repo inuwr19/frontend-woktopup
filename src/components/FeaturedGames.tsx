@@ -19,6 +19,7 @@ export const FeaturedGames: React.FC = () => {
       try {
         const response = await axiosTest.get("/games");
         setGames(response.data);
+        console.log("Fetched games:", response.data);
       } catch (err) {
         setError("Failed to fetch games. Please try again.");
       }
@@ -89,8 +90,6 @@ export const FeaturedGames: React.FC = () => {
     </section>
   );
 };
-
-
 
 // import React from 'react';
 // import { GameCard } from './GameCard';

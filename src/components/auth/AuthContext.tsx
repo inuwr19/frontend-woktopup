@@ -17,12 +17,15 @@ type User = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
+export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({
+  children,
+}) => {
   const [user, setUser] = useState<User | null>(null);
 
   const logout = async () => {
     await axiosTest.post("/auth/logout", {}, { withCredentials: true });
     setUser(null); // Reset pengguna setelah logout
+    localStorage.removeItem("user_id");
   };
 
   return (
@@ -39,7 +42,6 @@ export const useAuth = () => {
   }
   return context;
 };
-
 
 // interface User {
 //   id: number;

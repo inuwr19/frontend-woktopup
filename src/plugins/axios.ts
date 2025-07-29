@@ -1,5 +1,7 @@
-import axiosLib from 'axios'
-import Cookies from 'js-cookie'
+// src/plugins/axios.ts
+
+import axiosLib from 'axios';
+import Cookies from 'js-cookie';
 
 const axiosTest = axiosLib.create({
   baseURL: import.meta.env.VITE_BACKEND_URL,
@@ -7,17 +9,17 @@ const axiosTest = axiosLib.create({
     'X-Requested-With': 'XMLHttpRequest',
     'Accept': 'application/json',
   },
-})
+  withCredentials: true,
+});
 
-axiosTest.defaults.withCredentials  = true // allow sending cookies
-
-axiosTest.interceptors.request.use(async (config) => {
-  if ((config.method as string).toLowerCase() !== 'get') {
-    await axiosTest.get('/csrf-cookie').then()
-    config.headers['X-XSRF-TOKEN'] = Cookies.get('XSRF-TOKEN')
+// Tambahkan token CSRF (hanya jika ada)
+axiosTest.interceptors.request.use((config) => {
+  const token = Cookies.get('XSRF-TOKEN');
+  if (token) {
+    config.headers['X-XSRF-TOKEN'] = token;
   }
 
-  return config
-})
+  return config;
+});
 
-export default axiosTest
+export default axiosTest;

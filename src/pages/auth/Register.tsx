@@ -20,17 +20,23 @@ export const Register: React.FC = () => {
     try {
       await axiosTest.post(
         "/auth/register",
-        { name, email, phone, password, password_confirmation: passwordConfirmation },
+        {
+          name,
+          email,
+          phone_number: phone,
+          password,
+          password_confirmation: passwordConfirmation,
+        },
         { withCredentials: true }
       );
 
-      navigate("/login"); // Redirect to login page after successful registration
+      navigate("/login");
     } catch (err: unknown) {
-      // Validate the structure of the error object
-      if (axios.isAxiosError(err) && err.response && err.response.data.errors) {
-        const errors = err.response.data.errors;
-        const firstError = Object.values(errors)[0] as string[];
-        setError(firstError[0]); // Set the first validation error message
+      if (axios.isAxiosError(err)) {
+        const message =
+          err.response?.data?.message ||
+          "Registration failed. Please try again.";
+        setError(message);
       } else {
         setError("An unexpected error occurred.");
       }
@@ -41,7 +47,9 @@ export const Register: React.FC = () => {
     <AuthLayout>
       <div className="mb-8 text-center">
         <UserPlus className="w-12 h-12 text-indigo-600 dark:text-indigo-400 mx-auto mb-4" />
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Create an account</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Create an account
+        </h1>
         <p className="text-gray-600 dark:text-gray-300">Join WokTopup today</p>
       </div>
 
@@ -142,7 +150,10 @@ export const Register: React.FC = () => {
 
       <p className="mt-6 text-center text-gray-600 dark:text-gray-300">
         Already have an account?{" "}
-        <Link to="/login" className="text-indigo-600 dark:text-indigo-400 hover:underline">
+        <Link
+          to="/login"
+          className="text-indigo-600 dark:text-indigo-400 hover:underline"
+        >
           Sign in
         </Link>
       </p>
