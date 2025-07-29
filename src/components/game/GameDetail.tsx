@@ -27,10 +27,11 @@ export const GameDetail: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [game, setGame] = useState<Game | null>(null);
-  const [selectedOption, setSelectedOption] = useState<TopUpOption | null>(null);
+  const [selectedOption, setSelectedOption] = useState<TopUpOption | null>(
+    null
+  );
   const [error, setError] = useState<string | null>(null);
   const [finalPrice, setFinalPrice] = useState<number | null>(null);
-
 
   useEffect(() => {
     const fetchGameDetails = async () => {
@@ -63,48 +64,45 @@ export const GameDetail: React.FC = () => {
 
   const handleSubmitOrder = async (formData: any) => {
     try {
+      const userId = localStorage.getItem("user_id");
+      if (!userId) {
+        alert("You must be logged in to make a purchase.");
+        return;
+      }
+
+      if (!selectedOption) {
+        alert("Please select a top-up option.");
+        return;
+      }
+
+      const transactionId = generateTransactionId();
+      const totalPrice = finalPrice ?? selectedOption.price;
+
       const payload = {
-        user_id: localStorage.getItem("user_id"),
-        product_id: selectedOption?.id,
+        user_id: parseInt(userId, 10),
+        product_id: selectedOption.id,
         game_account_id: formData.gameId,
         quantity: 1,
-        server_id: formData.serverId || null,
-        total_price: finalPrice || selectedOption?.price,
-        // total_price: selectedOption?.price,
+        total_price: Number(totalPrice),
         payment_method: "midtrans",
         status: "pending",
-        transaction_id: generateTransactionId(),
-        payment_proof: null,
-        voucher_id: formData.voucher || null
+        transaction_id: transactionId,
+        voucher_id: formData.voucher ? parseInt(formData.voucher, 10) : null,
       };
 
       const response = await axiosTest.post("/orders", payload);
-      console.log("Order Response:", response.data);
       const orderId = response.data.id;
+
       if (!orderId) {
         alert("Failed to retrieve order ID. Please try again.");
         return;
       }
-      navigate(`/summary/${orderId}`);
 
-      // if (response.status === 201) {
-      //   const orderId = response.data.id;
-      //   navigate(`/summary/${orderId}`); // Navigasi ke halaman summary
-      // }
+      navigate(`/summary/${orderId}`);
     } catch (error: any) {
-      console.error(error.response?.data || error.message);
+      console.error("Order error:", error.response?.data || error.message);
       alert("Failed to process the order. Please try again.");
     }
-  
-      // await axiosTest.post("/orders", payload).then(() => navigate("/summary"))
-      // .catch((error) => console.error("Failed to create order:", error));
-      // console.log("Payload:", payload);
-
-      // navigate("/success");
-    // } catch (error: any) {
-    //   setError("Failed to process the order. Please try again.");
-    //   console.error(error.response?.data || error.message);
-    // }
   };
 
   if (error) {
@@ -166,7 +164,7 @@ export const GameDetail: React.FC = () => {
                     isSelected={selectedOption?.id === option.id}
                     onSelect={() => {
                       // console.log('Selected option:', option);
-                      setSelectedOption(option)
+                      setSelectedOption(option);
                     }}
                   />
                 ))}
@@ -182,7 +180,10 @@ export const GameDetail: React.FC = () => {
                   onSubmit={handleSubmitOrder}
                   // onFinalPriceChange={setFinalPrice}
                   onFinalPriceChange={(updatedFinalPrice) => {
-                    console.log("Final Price from CheckoutForm:", updatedFinalPrice); // Debug
+                    console.log(
+                      "Final Price from CheckoutForm:",
+                      updatedFinalPrice
+                    ); // Debug
                     setFinalPrice(updatedFinalPrice);
                   }}
                 />

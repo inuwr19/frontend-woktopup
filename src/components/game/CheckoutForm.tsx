@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useEffect,useState } from "react";
+import React, { useEffect, useState } from "react";
 import axiosTest from "../../plugins/axios";
 
 interface CheckoutFormProps {
@@ -7,7 +6,7 @@ interface CheckoutFormProps {
   productName: string;
   price: number;
   onSubmit: (formData: any) => void;
-  onFinalPriceChange: (finalPrice: number) => void; // Tambahkan ini
+  onFinalPriceChange: (finalPrice: number) => void;
 }
 
 export const CheckoutForm: React.FC<CheckoutFormProps> = ({
@@ -31,7 +30,6 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
       const { id, discount } = response.data;
       setVoucherId(id);
       setDiscount(discount);
-      // console.log(id, discount);
 
       const updatedFinalPrice = price - discount;
       setFinalPrice(updatedFinalPrice);
@@ -43,7 +41,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
   };
 
   useEffect(() => {
-    onFinalPriceChange(finalPrice); // Panggil fungsi setiap kali finalPrice berubah
+    onFinalPriceChange(finalPrice);
   }, [finalPrice]);
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -51,11 +49,11 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
     try {
       const formData = new FormData(event.currentTarget as HTMLFormElement);
       const data = {
-        gameId: formData.get("gameId"),
+        gameId: formData.get("gameId")?.toString().trim(),
+        serverId: formData.get("serverId")?.toString().trim() || null,
         voucher: voucherId || null,
       };
 
-      // Validasi data
       if (!data.gameId) {
         alert("Game ID is required.");
         return;
@@ -71,6 +69,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
   return (
     <form onSubmit={handleSubmit}>
       <h2 className="text-lg font-semibold mb-4">Checkout for {gameName}</h2>
+
       <div className="mb-4">
         <label className="block mb-2">Game Account ID</label>
         <input
@@ -80,6 +79,17 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
           required
         />
       </div>
+
+      <div className="mb-4">
+        <label className="block mb-2">Server ID (optional)</label>
+        <input
+          type="text"
+          name="serverId"
+          className="w-full border rounded-lg p-2"
+          placeholder="Enter Server ID (optional)"
+        />
+      </div>
+
       <div className="mb-4">
         <label className="block mb-2">Voucher Code (optional)</label>
         <div className="flex items-center gap-2">
@@ -99,10 +109,15 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
           </button>
         </div>
       </div>
+
       <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg">
-        <h3 className="font-medium text-gray-900 dark:text-white mb-1">Order Details</h3>
+        <h3 className="font-medium text-gray-900 dark:text-white mb-1">
+          Order Details
+        </h3>
         <p className="text-sm text-gray-600 dark:text-gray-300">{gameName}</p>
-        <p className="text-sm text-gray-600 dark:text-gray-300">{productName} - Rp {price.toLocaleString()}</p>
+        <p className="text-sm text-gray-600 dark:text-gray-300">
+          {productName} - Rp {price.toLocaleString()}
+        </p>
         <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
           Original Price: Rp {price.toLocaleString()}
         </p>
@@ -115,9 +130,10 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
           Final Price: Rp {finalPrice.toLocaleString()}
         </p>
       </div>
+
       <button
         type="submit"
-        className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-indigo-500 transition-colors"
+        className="w-full mt-4 bg-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-indigo-500 transition-colors"
       >
         Confirm Purchase
       </button>
