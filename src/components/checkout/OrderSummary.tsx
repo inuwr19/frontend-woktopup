@@ -51,6 +51,9 @@ export const OrderSummary = () => {
       try {
         const response = await axiosTest.get(`/orders/${orderId}`);
         const data = response.data;
+        console.log("Order response:", response);
+        console.log("Order data:", response.data);
+
         const orderSummary: OrderSummaryProps = {
           user: data.user?.name || "-",
           subtotal: parseFloat(data.total_price),

@@ -21,7 +21,7 @@ export const MyOrdersPage = () => {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const res = await axiosTest.get("/orders/user");
+        const res = await axiosTest.get("/history-orders/user");
         const mapped = res.data.map((o: any) => ({
           id: o.id,
           productName: o.product?.name || "-",
