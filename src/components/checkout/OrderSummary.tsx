@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { BackButton } from "../navigation/BackButton";
 import { formatCurrency } from "../../utils/currency";
 import axiosTest from "../../plugins/axios";
+import { CheckCircle, XCircle, Hourglass } from "lucide-react";
 
 declare global {
   interface Window {
@@ -28,6 +29,9 @@ interface OrderSummaryProps {
   accountId: string;
   voucherCode?: string;
   discount?: number;
+  status: string;
+  orderStatus: string;
+  paymentStatus: string;
 }
 
 export const OrderSummary = () => {
@@ -56,6 +60,9 @@ export const OrderSummary = () => {
           accountId: data.game_account_id,
           voucherCode: data.voucher?.code || undefined,
           discount: data.voucher?.discount || undefined,
+          status: data.status,
+          orderStatus: data.status,
+          paymentStatus: data.payment?.status || data.status,
         };
         setOrderData(orderSummary);
       } catch (error) {
@@ -81,12 +88,13 @@ export const OrderSummary = () => {
     accountId,
     voucherCode,
     discount,
+    paymentStatus,
   } = orderData;
 
   const handleConfirmPayment = async () => {
     try {
-      const response = await axiosTest.post("/payments/midtrans", {
-        order_id: orderId,
+      const response = await axiosTest.post("/payment/create", {
+        order_id: parseInt(orderId!),
       });
       const snapToken = response.data.token;
 
@@ -101,13 +109,13 @@ export const OrderSummary = () => {
       script.onload = () => {
         window.snap.pay(snapToken, {
           onSuccess: async (result: any) => {
-            console.log("Payment Success:", result);
             alert("Payment successful!");
             await axiosTest.post(`/payments/handle-notification`, { result });
-            navigate("/success");
+
+            // Alihkan ke halaman invoice
+            navigate(`/invoice/${orderId}`);
           },
           onPending: (result: any) => {
-            console.log("Payment Pending:", result);
             axiosTest
               .post(`/payments/handle-notification`, {
                 result,
@@ -115,16 +123,10 @@ export const OrderSummary = () => {
               })
               .then(() => {
                 alert("Payment is pending. Please complete the payment.");
-              })
-              .catch((err) => {
-                console.error(
-                  "Failed to update payment status to pending:",
-                  err
-                );
+                navigate("/orders");
               });
           },
           onError: (result: any) => {
-            console.error("Payment Failed:", result);
             axiosTest
               .post(`/payments/handle-notification`, {
                 result,
@@ -132,18 +134,47 @@ export const OrderSummary = () => {
               })
               .then(() => {
                 alert("Payment failed. Please try again.");
-              })
-              .catch((err) => {
-                console.error(
-                  "Failed to update payment status to failed:",
-                  err
-                );
+                navigate("/orders");
               });
           },
+          // onClose: () => {
+          //   // Jika user menutup popup tanpa menyelesaikan
+          //   navigate("/orders");
+          // },
         });
       };
     } catch (error) {
       console.error("Failed to initialize payment:", error);
+    }
+  };
+
+  const renderStatusIcon = () => {
+    switch (paymentStatus) {
+      case "settlement":
+        return (
+          <div className="text-green-500 flex flex-col items-center mb-6">
+            <CheckCircle size={64} />
+            <p className="mt-2 text-lg font-semibold">Payment Success</p>
+          </div>
+        );
+      case "pending":
+        return (
+          <div className="text-yellow-500 flex flex-col items-center mb-6">
+            <Hourglass size={64} />
+            <p className="mt-2 text-lg font-semibold">Payment Pending</p>
+          </div>
+        );
+      case "failed":
+      case "expire":
+      case "cancel":
+        return (
+          <div className="text-red-500 flex flex-col items-center mb-6">
+            <XCircle size={64} />
+            <p className="mt-2 text-lg font-semibold">Payment Failed</p>
+          </div>
+        );
+      default:
+        return null;
     }
   };
 
@@ -152,7 +183,8 @@ export const OrderSummary = () => {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <BackButton label="Back to Checkout" />
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden p-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+          {renderStatusIcon()}
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
             Order Summary
           </h1>
 
@@ -173,24 +205,24 @@ export const OrderSummary = () => {
             )}
           </div>
 
-          <div className="space-y-4">
-            <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-              <SummaryItem
-                label="Total"
-                value={formatCurrency(subtotal)}
-                isTotal
-              />
-            </div>
+          <div className="space-y-4 border-t border-gray-200 dark:border-gray-700 pt-4">
+            <SummaryItem
+              label="Total"
+              value={formatCurrency(subtotal)}
+              isTotal
+            />
           </div>
 
-          <div className="mt-6">
-            <button
-              onClick={handleConfirmPayment}
-              className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-indigo-500 transition-colors"
-            >
-              Payment
-            </button>
-          </div>
+          {paymentStatus !== "settlement" && (
+            <div className="mt-6">
+              <button
+                onClick={handleConfirmPayment}
+                className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-indigo-500 transition-colors"
+              >
+                Pay Now
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

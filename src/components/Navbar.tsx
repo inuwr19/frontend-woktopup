@@ -1,8 +1,5 @@
-// import axios from 'axios';
-// import axiosTest from "../plugins/axios";
-
-import React, { useState, useRef, useEffect } from "react";
-import { ShoppingCart, User, LogIn } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { ShoppingCart, User, LogIn, Clock } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { Link } from "react-router-dom";
 import { useAuth } from "../components/auth/AuthContext";
@@ -15,24 +12,24 @@ export const Navbar = () => {
   const handleLogout = async () => {
     try {
       await logout();
-      setDropdownOpen(false); // Tutup dropdown setelah logout
+      setDropdownOpen(false);
     } catch (error) {
       console.error("Error during logout:", error);
     }
   };
 
-  // Close the dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setDropdownOpen(false);
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   return (
@@ -49,7 +46,10 @@ export const Navbar = () => {
           {/* Right Section */}
           <div className="flex items-center gap-4">
             <ThemeToggle />
-            <Link to="/cart" className="p-2 hover:text-indigo-600 dark:hover:text-indigo-400">
+            <Link
+              to="/cart"
+              className="p-2 hover:text-indigo-600 dark:hover:text-indigo-400"
+            >
               <ShoppingCart className="w-6 h-6" />
             </Link>
 
@@ -63,10 +63,19 @@ export const Navbar = () => {
                   <User className="w-6 h-6" />
                 </button>
                 {dropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 shadow-lg rounded-lg z-50">
+                  <div className="absolute right-0 mt-2 w-52 bg-white dark:bg-gray-700 shadow-lg rounded-lg z-50 py-2">
+                    <Link
+                      to="/orders"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600"
+                      onClick={() => setDropdownOpen(false)}
+                    >
+                      <Clock className="w-4 h-4" />
+                      History Order
+                    </Link>
+                    <hr className="my-1 border-t border-gray-200 dark:border-gray-600" />
                     <button
                       onClick={handleLogout}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-md"
+                      className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-600"
                     >
                       Logout
                     </button>
@@ -74,7 +83,10 @@ export const Navbar = () => {
                 )}
               </div>
             ) : (
-              <Link to="/login" className="p-2 hover:text-indigo-600 dark:hover:text-indigo-400">
+              <Link
+                to="/login"
+                className="p-2 hover:text-indigo-600 dark:hover:text-indigo-400"
+              >
                 <LogIn className="w-6 h-6" />
               </Link>
             )}
