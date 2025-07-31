@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { ShoppingCart, User, LogIn, Clock } from "lucide-react";
+import { User, LogIn, Clock } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { Link } from "react-router-dom";
 import { useAuth } from "../components/auth/AuthContext";
@@ -46,12 +46,6 @@ export const Navbar = () => {
           {/* Right Section */}
           <div className="flex items-center gap-4">
             <ThemeToggle />
-            <Link
-              to="/cart"
-              className="p-2 hover:text-indigo-600 dark:hover:text-indigo-400"
-            >
-              <ShoppingCart className="w-6 h-6" />
-            </Link>
 
             {/* User Menu */}
             {user ? (
