@@ -18,9 +18,14 @@ export const LatestTransactions = () => {
     const fetchTransactions = async () => {
       try {
         const res = await axiosTest.get("/transactions/latest");
-        setTransactions(res.data);
+        if (Array.isArray(res.data.transactions)) {
+          setTransactions(res.data.transactions);
+        } else {
+          setTransactions([]);
+        }
       } catch (err) {
         console.error("Failed to fetch latest transactions", err);
+        setTransactions([]);
       } finally {
         setLoading(false);
       }
@@ -32,6 +37,14 @@ export const LatestTransactions = () => {
   if (loading) {
     return (
       <div className="text-gray-700 dark:text-gray-300 p-4">Loading...</div>
+    );
+  }
+
+  if (transactions.length === 0) {
+    return (
+      <div className="text-gray-700 dark:text-gray-300 p-4">
+        No transactions yet
+      </div>
     );
   }
 
